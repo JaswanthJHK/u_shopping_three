@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:shopping_list/features/models/category_model.dart';
 
 class GroceryItem {
