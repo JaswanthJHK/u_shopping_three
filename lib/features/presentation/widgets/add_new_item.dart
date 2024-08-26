@@ -1,6 +1,9 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+
+import 'package:http/http.dart' as http;
 import 'package:shopping_list/features/data/categories.dart';
-import 'package:shopping_list/features/data/dummy_list.dart';
 import 'package:shopping_list/features/models/category_model.dart';
 import 'package:shopping_list/features/models/grocery_item.dart';
 
@@ -21,10 +24,23 @@ class _AddNewItemState extends State<AddNewItem> {
   void _saveItem() {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
-
-      Navigator.pop(context,GroceryItem(id:DateTime.now().toString() , name: _enteredName, quantity: _enterdQuantity
-      , category: _selectedCategory),);
-      
+      final url = Uri.https(
+          'udemyshoppinglist-2b304-default-rtdb.firebaseio.com',
+          'shopping-list.json');
+      http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: json.encode(
+          {
+            'name': _enteredName,
+            'quantity': _enterdQuantity,
+            'category': _selectedCategory.title,
+          },
+        ),
+      );
+      // Navigator.pop(context);
     }
   }
 
@@ -110,9 +126,9 @@ class _AddNewItemState extends State<AddNewItem> {
                         if (value == null) {
                           return;
                         }
-                       setState(() {
+                        setState(() {
                           _selectedCategory = value;
-                       });
+                        });
                       },
                     ),
                   ),
