@@ -1,4 +1,8 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:shopping_list/features/data/categories.dart';
 import 'package:shopping_list/features/data/dummy_list.dart';
 import 'package:shopping_list/features/models/category_model.dart';
 import 'package:shopping_list/features/models/grocery_item.dart';
@@ -12,20 +16,50 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final List<GroceryItem> _groceryItems = [];
+  List<GroceryItem> _groceryItems = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadItem();
+  }
+
+  void _loadItem() async {
+    final url = Uri.https('udemyshoppinglist-2b304-default-rtdb.firebaseio.com',
+        'shopping-list.json');
+
+    final response = await http.get(url);
+  //  print(response.body);
+
+    final Map<String, dynamic> newList = jsonDecode(response.body);
+  //  print(newList);
+    final List<GroceryItem> _loadedItem = [];
+    for (final item in newList.entries) {
+      final category = categories.entries
+          .firstWhere(
+              (catItem) => catItem.value.title == item.value['category'])
+          .value;
+      _loadedItem.add(
+        GroceryItem(
+          id: item.key,
+          name: item.value['name'],
+          quantity: item.value['quantity'],
+          category: category,
+        ),
+      );
+    }
+    setState(() {
+      _groceryItems = _loadedItem;
+    });
+  }
+
   void _addItem() async {
-    final newItem = await Navigator.push<GroceryItem>(
+    await Navigator.push<GroceryItem>(
         context,
         MaterialPageRoute(
           builder: (context) => const AddNewItem(),
         ));
-
-    if (newItem == null) {
-      return;
-    }
-    setState(() {
-      _groceryItems.add(newItem);
-    });
+    _loadItem();
   }
 
   void _removeList(GroceryItem item) {
@@ -37,8 +71,7 @@ class _HomePageState extends State<HomePage> {
       SnackBar(
         duration: const Duration(seconds: 2),
         content: const Text("Expense Deleted"),
-        behavior: SnackBarBehavior.floating
-        ,
+        behavior: SnackBarBehavior.floating,
         action: SnackBarAction(
             label: "Undo",
             onPressed: () {
