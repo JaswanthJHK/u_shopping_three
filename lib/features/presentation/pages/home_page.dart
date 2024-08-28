@@ -3,10 +3,9 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shopping_list/features/data/categories.dart';
-import 'package:shopping_list/features/data/dummy_list.dart';
-import 'package:shopping_list/features/models/category_model.dart';
 import 'package:shopping_list/features/models/grocery_item.dart';
 import 'package:shopping_list/features/presentation/widgets/add_new_item.dart';
+import 'package:shopping_list/features/presentation/widgets/skelton.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -17,6 +16,8 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   List<GroceryItem> _groceryItems = [];
+
+  var _isLoading = true;
 
   @override
   void initState() {
@@ -29,17 +30,17 @@ class _HomePageState extends State<HomePage> {
         'shopping-list.json');
 
     final response = await http.get(url);
-  //  print(response.body);
+    //  print(response.body);
 
     final Map<String, dynamic> newList = jsonDecode(response.body);
-  //  print(newList);
-    final List<GroceryItem> _loadedItem = [];
+    //  print(newList);
+    final List<GroceryItem> loadedItem = [];
     for (final item in newList.entries) {
       final category = categories.entries
           .firstWhere(
               (catItem) => catItem.value.title == item.value['category'])
           .value;
-      _loadedItem.add(
+      loadedItem.add(
         GroceryItem(
           id: item.key,
           name: item.value['name'],
@@ -49,17 +50,22 @@ class _HomePageState extends State<HomePage> {
       );
     }
     setState(() {
-      _groceryItems = _loadedItem;
+      _groceryItems = loadedItem;
+      _isLoading = false;
     });
   }
 
   void _addItem() async {
-    await Navigator.push<GroceryItem>(
+    final newItem = await Navigator.push<GroceryItem>(
         context,
         MaterialPageRoute(
           builder: (context) => const AddNewItem(),
         ));
-    _loadItem();
+
+    if (newItem == null) {
+      return;
+    }
+    _groceryItems.add(newItem);
   }
 
   void _removeList(GroceryItem item) {
@@ -85,46 +91,55 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Y O U R   I T E M S"),
-        centerTitle: true,
-        actions: [
-          IconButton(
-              onPressed: () {
-                _addItem();
-              },
-              icon: const Icon(Icons.add))
-        ],
+    Widget content = const Center(
+      child: Text(
+        "P L E A S E    A D D  S O M E    I T E M S",
+        //  style: TextStyle(color: Colors.amber),
       ),
-      body: _groceryItems.isEmpty
-          ? const Center(
-              child: Text(
-                "P L E A S E    A D D  S O M E    I T E M S",
-                //  style: TextStyle(color: Colors.amber),
-              ),
-            )
-          : ListView.builder(
-              itemCount: _groceryItems.length,
-              itemBuilder: (context, index) => Dismissible(
-                key: ValueKey(_groceryItems[index].id),
-                onDismissed: (direction) {
-                  _removeList(_groceryItems[index]);
-                },
-                child: ListTile(
-                  title: Text(_groceryItems[index].name),
-                  trailing: Text(
-                    _groceryItems[index].quantity.toString(),
-                    style: const TextStyle(fontSize: 25),
-                  ),
-                  leading: Container(
-                    width: 24,
-                    height: 24,
-                    color: _groceryItems[index].category.color,
-                  ),
-                ),
-              ),
-            ),
     );
+    if (_isLoading) {
+      content = ListView.builder(
+        itemBuilder: (context, index) => const SkeltonLoading(),
+        itemCount: 14,
+      );
+
+   
+    }
+    if (_groceryItems.isNotEmpty) {
+      content = ListView.builder(
+        itemCount: _groceryItems.length,
+        itemBuilder: (context, index) => Dismissible(
+          key: ValueKey(_groceryItems[index].id),
+          onDismissed: (direction) {
+            _removeList(_groceryItems[index]);
+          },
+          child: ListTile(
+            title: Text(_groceryItems[index].name),
+            trailing: Text(
+              _groceryItems[index].quantity.toString(),
+              style: const TextStyle(fontSize: 25),
+            ),
+            leading: Container(
+              width: 24,
+              height: 24,
+              color: _groceryItems[index].category.color,
+            ),
+          ),
+        ),
+      );
+    }
+    return Scaffold(
+        appBar: AppBar(
+          title: const Text("Y O U R   I T E M S"),
+          centerTitle: true,
+          actions: [
+            IconButton(
+                onPressed: () {
+                  _addItem();
+                },
+                icon: const Icon(Icons.add))
+          ],
+        ),
+        body: content);
   }
 }

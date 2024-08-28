@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import 'package:http/http.dart' as http;
 import 'package:shopping_list/features/data/categories.dart';
+import 'package:shopping_list/features/data/dummy_list.dart';
 import 'package:shopping_list/features/models/category_model.dart';
 import 'package:shopping_list/features/models/grocery_item.dart';
 
@@ -44,8 +45,17 @@ class _AddNewItemState extends State<AddNewItem> {
       print(response.body);
       print(response.statusCode);
 
-     
-      Navigator.pop(context);
+      final Map<String, dynamic> resData = jsonDecode(response.body);
+
+      Navigator.pop(
+        context,
+        GroceryItem(
+          id: resData['name'],
+          name: _enteredName,
+          quantity: _enterdQuantity,
+          category: _selectedCategory,
+        ),
+      );
     }
   }
 
