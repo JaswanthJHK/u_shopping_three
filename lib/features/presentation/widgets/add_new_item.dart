@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 
 import 'package:http/http.dart' as http;
 import 'package:shopping_list/features/data/categories.dart';
-import 'package:shopping_list/features/data/dummy_list.dart';
 import 'package:shopping_list/features/models/category_model.dart';
 import 'package:shopping_list/features/models/grocery_item.dart';
 
@@ -21,10 +20,14 @@ class _AddNewItemState extends State<AddNewItem> {
   var _enteredName = '';
   var _enterdQuantity = 1;
   var _selectedCategory = categories[Categories.vegetables]!;
+  var _isSending = false;
 
-  void _saveItem() async {
+  _saveItem() async {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
+      setState(() {
+        _isSending = true;
+      });
       final url = Uri.https(
           'udemyshoppinglist-2b304-default-rtdb.firebaseio.com',
           'shopping-list.json');
@@ -156,14 +159,18 @@ class _AddNewItemState extends State<AddNewItem> {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   TextButton(
-                    onPressed: () {
-                      _formKey.currentState!.reset();
-                    },
+                    onPressed: _isSending
+                        ? null
+                        : () {
+                            _formKey.currentState!.reset();
+                          },
                     child: const Text("R E S E T"),
                   ),
                   ElevatedButton(
-                    onPressed: _saveItem,
-                    child: const Text("A D D  I T E M"),
+                    onPressed: _isSending ? null : _saveItem,
+                    child: _isSending
+                        ? const Text("S A V I N G")
+                        : const Text("A D D  I T E M"),
                   ),
                 ],
               )

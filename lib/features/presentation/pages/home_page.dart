@@ -18,6 +18,7 @@ class _HomePageState extends State<HomePage> {
   List<GroceryItem> _groceryItems = [];
 
   var _isLoading = true;
+  String? _error;
 
   @override
   void initState() {
@@ -30,7 +31,14 @@ class _HomePageState extends State<HomePage> {
         'shopping-list.json');
 
     final response = await http.get(url);
-    //  print(response.body);
+    print("${response.statusCode}here---------------+++++");
+    print("N O T H I N G -------------)++++++++");
+
+    if (response.statusCode >= 400) {
+      setState(() {
+        _error = "Failed to fetch data Something went wrong";
+      });
+    }
 
     final Map<String, dynamic> newList = jsonDecode(response.body);
     //  print(newList);
@@ -65,26 +73,42 @@ class _HomePageState extends State<HomePage> {
     if (newItem == null) {
       return;
     }
-    _groceryItems.add(newItem);
+    setState(() {
+      _groceryItems.add(newItem);
+    });
   }
 
-  void _removeList(GroceryItem item) {
+  void _removeList(GroceryItem item) async {
     setState(() {
       _groceryItems.remove(item);
     });
+
+    final index = _groceryItems.indexOf(item);
+    final url = Uri.https('udemyshoppinglist-2b304-default-rtdb.firebaseio.com',
+        'shopping-list/${item.id}.json');
+
+    final resoponse = await http.delete(url);
+    if (resoponse.statusCode >= 400) {
+     setState(() {
+        _groceryItems.insert(index, item);
+     });
+    }
+
     ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
+      const SnackBar(
         duration: const Duration(seconds: 2),
-        content: const Text("Expense Deleted"),
+        content: const Text(
+          "Expense Deleted",
+        ),
         behavior: SnackBarBehavior.floating,
-        action: SnackBarAction(
-            label: "Undo",
-            onPressed: () {
-              setState(() {
-                _groceryItems.add(item);
-              });
-            }),
+        // action: SnackBarAction(
+        //     label: "Undo",
+        //     onPressed: () {
+        //       setState(() {
+        //         _groceryItems.add(item);
+        //       });
+        //     }),
       ),
     );
   }
@@ -102,8 +126,6 @@ class _HomePageState extends State<HomePage> {
         itemBuilder: (context, index) => const SkeltonLoading(),
         itemCount: 14,
       );
-
-   
     }
     if (_groceryItems.isNotEmpty) {
       content = ListView.builder(
@@ -128,6 +150,12 @@ class _HomePageState extends State<HomePage> {
         ),
       );
     }
+    if (_error != null) {
+      content = Center(
+        child: Text(_error!),
+      );
+    }
+
     return Scaffold(
         appBar: AppBar(
           title: const Text("Y O U R   I T E M S"),
