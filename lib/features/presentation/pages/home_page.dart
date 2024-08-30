@@ -29,38 +29,49 @@ class _HomePageState extends State<HomePage> {
   void _loadItem() async {
     final url = Uri.https('udemyshoppinglist-2b304-default-rtdb.firebaseio.com',
         'shopping-list.json');
+    try {
+      final response = await http.get(url);
+      //  print("${response.statusCode}here---------------+++++");
+      //   print("N O T H I N G -------------)++++++++");
 
-    final response = await http.get(url);
-    print("${response.statusCode}here---------------+++++");
-    print("N O T H I N G -------------)++++++++");
-
-    if (response.statusCode >= 400) {
+      if (response.statusCode >= 400) {
+        setState(() {
+          _error = "Failed to fetch data Something went wrong";
+        });
+      }
+      if (response.body.isEmpty || response.body == 'null') {
+        // if there is no data in backent it'll return null string so we checked that and stopped the skelton loading by making the "_isloading to false"
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
+      final Map<String, dynamic> newList = jsonDecode(response.body);
+      //  print(newList);
+      final List<GroceryItem> loadedItem = [];
+      for (final item in newList.entries) {
+        final category = categories.entries
+            .firstWhere(
+                (catItem) => catItem.value.title == item.value['category'])
+            .value;
+        loadedItem.add(
+          GroceryItem(
+            id: item.key,
+            name: item.value['name'],
+            quantity: item.value['quantity'],
+            category: category,
+          ),
+        );
+      }
       setState(() {
-        _error = "Failed to fetch data Something went wrong";
+        _groceryItems = loadedItem;
+        _isLoading = false;
+      });
+    } catch (error) {
+      setState(() {
+        _error = "Something went wrong! Please try again";
       });
     }
-
-    final Map<String, dynamic> newList = jsonDecode(response.body);
-    //  print(newList);
-    final List<GroceryItem> loadedItem = [];
-    for (final item in newList.entries) {
-      final category = categories.entries
-          .firstWhere(
-              (catItem) => catItem.value.title == item.value['category'])
-          .value;
-      loadedItem.add(
-        GroceryItem(
-          id: item.key,
-          name: item.value['name'],
-          quantity: item.value['quantity'],
-          category: category,
-        ),
-      );
-    }
-    setState(() {
-      _groceryItems = loadedItem;
-      _isLoading = false;
-    });
   }
 
   void _addItem() async {
@@ -89,16 +100,16 @@ class _HomePageState extends State<HomePage> {
 
     final resoponse = await http.delete(url);
     if (resoponse.statusCode >= 400) {
-     setState(() {
+      setState(() {
         _groceryItems.insert(index, item);
-     });
+      });
     }
 
     ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        duration: const Duration(seconds: 2),
-        content: const Text(
+        duration: Duration(seconds: 2),
+        content: Text(
           "Expense Deleted",
         ),
         behavior: SnackBarBehavior.floating,

@@ -31,22 +31,24 @@ class _AddNewItemState extends State<AddNewItem> {
       final url = Uri.https(
           'udemyshoppinglist-2b304-default-rtdb.firebaseio.com',
           'shopping-list.json');
-      final response = await http.post(
-        url,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: json.encode(
-          {
-            'name': _enteredName,
-            'quantity': _enterdQuantity,
-            'category': _selectedCategory.title,
+      
+        final response = await http.post(
+          url,
+          headers: {
+            'Content-Type': 'application/json',
           },
-        ),
-      );
+          body: json.encode(
+            {
+              'name': _enteredName,
+              'quantity': _enterdQuantity,
+              'category': _selectedCategory.title,
+            },
+          ),
+        );
+      
 
-      print(response.body);
-      print(response.statusCode);
+      // print(response.body);
+      //  print(response.statusCode);
 
       final Map<String, dynamic> resData = jsonDecode(response.body);
 
@@ -169,7 +171,7 @@ class _AddNewItemState extends State<AddNewItem> {
                   ElevatedButton(
                     onPressed: _isSending ? null : _saveItem,
                     child: _isSending
-                        ? const Text("S A V I N G")
+                        ? const Text(" S A V I N G  ")
                         : const Text("A D D  I T E M"),
                   ),
                 ],
